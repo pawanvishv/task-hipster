@@ -117,21 +117,11 @@ class Image extends Model
     {
         return [
             self::VARIANT_ORIGINAL,
-            self::VARIANT_THUMBNAIL_256,
-            self::VARIANT_MEDIUM_512,
-            self::VARIANT_LARGE_1024,
+            self::VARIANT_THUMBNAIL,
+            self::VARIANT_SMALL,
+            self::VARIANT_MEDIUM,
+            self::VARIANT_LARGE,
         ];
-    }
-
-    public static function getVariantMaxDimension(string $variant): ?int
-    {
-        return match ($variant) {
-            self::VARIANT_THUMBNAIL_256 => 256,
-            self::VARIANT_MEDIUM_512 => 512,
-            self::VARIANT_LARGE_1024 => 1024,
-            self::VARIANT_ORIGINAL => null,
-            default => null,
-        };
     }
 
     public function scopeVariant($query, string $variant)
