@@ -1,0 +1,54 @@
+{
+    "name": "pawan/laravel-user-discounts",
+    "description": "A reusable Laravel package for managing user-level discounts with deterministic stacking and comprehensive audit trails",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "discounts",
+        "user-discounts",
+        "package",
+        "pricing"
+    ],
+    "authors": [
+        {
+            "name": "Pawan",
+            "email": "pawan@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2|^8.3|^8.4",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/events": "^11.0|^12.0",
+        "illuminate/config": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^11.0",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pawan\\UserDiscounts\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pawan\\UserDiscounts\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Pawan\\UserDiscounts\\UserDiscountsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit --no-coverage",
+        "test-coverage": "vendor/bin/phpunit"
+    }
+}
