@@ -172,7 +172,7 @@ class ImportService {
     /**
      * Generate mock CSV data
      */
-    public generateMockCsv(rows: number = 1000): void {
+    public generateMockCsv(rows: number = 20000): void {
         const headers = [
             "sku",
             "name",
@@ -180,8 +180,10 @@ class ImportService {
             "stock_quantity",
             "description",
             "status",
+            "primary_image",
         ];
         const statuses = ["active", "inactive", "draft"];
+        const imageUrl = "/Users/pawan/Downloads/50mb.jpg";
 
         let csv = headers.join(",") + "\n";
 
@@ -193,6 +195,7 @@ class ImportService {
                 Math.floor(Math.random() * 500),
                 `Description for product ${i}`.replace(/,/g, ";"),
                 statuses[Math.floor(Math.random() * statuses.length)],
+                imageUrl,
             ];
             csv += row.join(",") + "\n";
         }

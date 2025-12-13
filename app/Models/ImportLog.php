@@ -156,7 +156,14 @@ class ImportLog extends Model
     protected function calculateProcessingTime(): void
     {
         if ($this->started_at && $this->completed_at) {
-            $this->processing_time_seconds = $this->completed_at->diffInSeconds($this->started_at);
+            $seconds = $this->completed_at->diffInSeconds($this->started_at);
+            $this->processing_time_seconds = max(0, $seconds);
+        } elseif ($this->created_at && $this->completed_at) {
+            // Fallback if started_at wasn't set
+            $seconds = $this->completed_at->diffInSeconds($this->created_at);
+            $this->processing_time_seconds = max(0, $seconds);
+        } else {
+            $this->processing_time_seconds = 0;
         }
     }
 

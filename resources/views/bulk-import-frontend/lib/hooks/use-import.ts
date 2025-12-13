@@ -155,7 +155,7 @@ export function useDownloadMockCsv() {
 
     return useMutation({
         mutationFn: async (rows: number) => {
-            importService.downloadMockCsv(rows);
+            importService.generateMockCsv(rows);
             return rows;
         },
         onSuccess: (rows) => {

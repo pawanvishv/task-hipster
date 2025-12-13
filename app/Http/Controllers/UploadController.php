@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateImageVariantsJob;
 use Illuminate\Support\Facades\Storage;
 use App\Contracts\UploadServiceInterface;
 use App\Http\Requests\UploadChunkRequest;
@@ -16,23 +17,12 @@ use App\Contracts\ImageProcessingServiceInterface;
 
 class UploadController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @param \App\Contracts\UploadServiceInterface $uploadService
-     * @param \App\Contracts\ImageProcessingServiceInterface $imageProcessingService
-     */
+
     public function __construct(
         private readonly UploadServiceInterface $uploadService,
         private readonly ImageProcessingServiceInterface $imageProcessingService,
     ) {}
 
-    /**
-     * Initialize a new chunked upload.
-     *
-     * @param \App\Http\Requests\InitializeUploadRequest $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function initialize(InitializeUploadRequest $request): JsonResponse
     {
         try {
@@ -73,12 +63,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Upload a chunk.
-     *
-     * @param \App\Http\Requests\UploadChunkRequest $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function uploadChunk(UploadChunkRequest $request)
     {
         try {
@@ -216,16 +200,15 @@ class UploadController extends Controller
             // Generate image variants if requested and file is an image
             $images = collect();
             if ($request->boolean('generate_variants', true)) {
-                if ($this->imageProcessingService->isValidImage(
-                    storage_path('app/uploads/' . $upload->stored_filename)
-                )) {
-                    $images = $this->imageProcessingService->generateVariants($upload);
+                GenerateImageVariantsJob::dispatch(
+                    $uploadId,
+                    [],
+                    []
+                );
 
-                    Log::info('Image variants generated', [
-                        'upload_id' => $upload->id,
-                        'variants_count' => $images->count(),
-                    ]);
-                }
+                Log::info('Variant generation job dispatched', [
+                    'upload_id' => $uploadId,
+                ]);
             }
 
             return response()->json([
@@ -260,12 +243,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Get upload status.
-     *
-     * @param string $uploadId
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function status(string $uploadId): JsonResponse
     {
         try {
@@ -296,12 +273,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Resume an interrupted upload.
-     *
-     * @param string $uploadId
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function resume(string $uploadId): JsonResponse
     {
         try {
@@ -339,12 +310,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Cancel an upload.
-     *
-     * @param string $uploadId
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function cancel(string $uploadId): JsonResponse
     {
         try {
@@ -375,12 +340,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Verify upload checksum.
-     *
-     * @param string $uploadId
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function verifyChecksum(string $uploadId): JsonResponse
     {
         try {
@@ -407,12 +366,6 @@ class UploadController extends Controller
         }
     }
 
-    /**
-     * Get upload history.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function history(Request $request): JsonResponse
     {
         try {

@@ -12,6 +12,7 @@ use League\Csv\Statement;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Traits\HandlesProductImages;
 use App\Jobs\ProcessImageFromSourceJob;
 use Illuminate\Support\Facades\Storage;
 use App\Contracts\ImportServiceInterface;
@@ -20,6 +21,8 @@ use App\Contracts\ProductRepositoryInterface;
 
 class ProductImportService implements ImportServiceInterface
 {
+    use HandlesProductImages;
+
     protected ProductRepositoryInterface $productRepository;
     protected array $requiredColumns = ['sku', 'name', 'price', 'stock_quantity'];
     protected array $optionalColumns = ['description', 'status', 'primary_image'];
@@ -136,10 +139,7 @@ class ProductImportService implements ImportServiceInterface
             $existingProduct = $this->productRepository->findBySku($row['sku']);
 
             if ($existingProduct) {
-                // Update existing product
                 $this->updateProduct($existingProduct, $row);
-
-                // Handle image if provided
                 if (!empty($row['primary_image'])) {
                     $this->attachPrimaryImage($existingProduct, $row['primary_image']);
                 }
@@ -239,8 +239,8 @@ class ProductImportService implements ImportServiceInterface
         $duplicates = 0;
         $errors = [];
 
-        $skipInvalid = $options['skip_invalid'] ?? true;
-        $updateExisting = $options['update_existing'] ?? true;
+        $skipInvalid = true;
+        $updateExisting = true;
 
         foreach ($records as $offset => $record) {
             $total++;
@@ -269,6 +269,7 @@ class ProductImportService implements ImportServiceInterface
                     if (!$skipInvalid) {
                         throw new \Exception('Invalid record at row ' . $rowNumber);
                     }
+                    continue;
                 }
 
             } catch (\Exception $e) {
@@ -334,9 +335,6 @@ class ProductImportService implements ImportServiceInterface
         ];
     }
 
-    /**
-     * Create new product
-     */
     protected function createProduct(array $data): Product
     {
         return $this->productRepository->create([
@@ -349,9 +347,6 @@ class ProductImportService implements ImportServiceInterface
         ]);
     }
 
-    /**
-     * Update existing product
-     */
     protected function updateProduct(Product $product, array $data): Product
     {
         return $this->productRepository->update($product, [
@@ -363,233 +358,4 @@ class ProductImportService implements ImportServiceInterface
         ]);
     }
 
-    /**
-     * Attach primary image to product
-     * Priority: images table → uploads table → process new source
-     */
-    protected function attachPrimaryImage(Product $product, string $imageSource): void
-    {
-        // ========================================
-        // STEP 1: Try to Find Image Directly in Images Table
-        // ========================================
-
-        $existingImage = $this->findImageInImagesTable($imageSource);
-
-        if ($existingImage) {
-            $this->productRepository->attachPrimaryImage($product, $existingImage->id);
-
-            Log::info('Primary image attached (found in images table)', [
-                'product_id' => $product->id,
-                'sku' => $product->sku,
-                'image_id' => $existingImage->id,
-                'upload_id' => $existingImage->upload_id,
-                'source' => $imageSource,
-            ]);
-
-            return; // ✅ Done! Exit early
-        }
-
-        Log::debug('Image not found in images table, checking uploads', [
-            'source' => $imageSource,
-        ]);
-
-        // ========================================
-        // STEP 2: Try to Find Upload in Uploads Table
-        // ========================================
-
-        $existingUpload = $this->findUploadInUploadsTable($imageSource);
-
-        if ($existingUpload) {
-            // Found upload but no image record - create image and attach
-            $image = $this->createImageFromUpload($existingUpload);
-
-            $this->productRepository->attachPrimaryImage($product, $image->id);
-
-            Log::info('Primary image attached (found in uploads table, created image)', [
-                'product_id' => $product->id,
-                'sku' => $product->sku,
-                'image_id' => $image->id,
-                'upload_id' => $existingUpload->id,
-                'source' => $imageSource,
-            ]);
-
-            return; // ✅ Done! Exit early
-        }
-
-        Log::debug('Image not found in uploads table, checking source type', [
-            'source' => $imageSource,
-        ]);
-
-        // ========================================
-        // STEP 3: Check if it's a URL/Path (needs processing)
-        // ========================================
-
-        if (str_contains($imageSource, '/') || str_contains($imageSource, ':')) {
-            // It's a URL, local path, or S3 path - dispatch job
-            Log::info('Dispatching image processing job', [
-                'product_id' => $product->id,
-                'sku' => $product->sku,
-                'image_source' => $imageSource,
-            ]);
-
-            ProcessImageFromSourceJob::dispatch(
-                $imageSource,
-                $product->id,
-                [
-                    'generate_variants' => true,
-                    'delete_source' => false,
-                    'storage_disk' => 'local',
-                ]
-            );
-
-            return; // ✅ Job dispatched
-        }
-
-        // ========================================
-        // STEP 4: Not Found Anywhere
-        // ========================================
-
-        Log::warning('Image not found in any location', [
-            'product_id' => $product->id,
-            'sku' => $product->sku,
-            'image_source' => $imageSource,
-        ]);
-    }
-
-    /**
-     * PRIORITY 1: Search images table first
-     * Try multiple search strategies
-     */
-    protected function findImageInImagesTable(string $imageSource): ?Image
-    {
-        // Strategy 1: Search by path (exact match)
-        $image = Image::where('path', $imageSource)
-            ->where('variant', Image::VARIANT_ORIGINAL)
-            ->first();
-
-        if ($image) {
-            Log::debug('Image found by exact path match', [
-                'image_id' => $image->id,
-                'path' => $image->path,
-            ]);
-            return $image;
-        }
-
-        // Strategy 2: Search by path (partial match - contains filename)
-        $image = Image::where('path', 'like', "%{$imageSource}%")
-            ->where('variant', Image::VARIANT_ORIGINAL)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if ($image) {
-            Log::debug('Image found by partial path match', [
-                'image_id' => $image->id,
-                'path' => $image->path,
-                'search' => $imageSource,
-            ]);
-            return $image;
-        }
-
-        // Strategy 3: Search via upload relationship
-        $image = Image::whereHas('upload', function ($query) use ($imageSource) {
-            $query->where('original_filename', $imageSource)
-                  ->orWhere('stored_filename', 'like', "%{$imageSource}%");
-        })
-        ->where('variant', Image::VARIANT_ORIGINAL)
-        ->orderBy('created_at', 'desc')
-        ->first();
-
-        if ($image) {
-            Log::debug('Image found via upload relationship', [
-                'image_id' => $image->id,
-                'upload_id' => $image->upload_id,
-            ]);
-            return $image;
-        }
-
-        return null;
-    }
-
-    /**
-     * PRIORITY 2: Search uploads table if image not found
-     */
-    protected function findUploadInUploadsTable(string $imageSource): ?Upload
-    {
-        // Strategy 1: Search by original filename
-        $upload = Upload::where('status', Upload::STATUS_COMPLETED)
-            ->where('original_filename', $imageSource)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if ($upload) {
-            Log::debug('Upload found by original filename', [
-                'upload_id' => $upload->id,
-                'filename' => $upload->original_filename,
-            ]);
-            return $upload;
-        }
-
-        // Strategy 2: Search by stored filename (partial match)
-        $upload = Upload::where('status', Upload::STATUS_COMPLETED)
-            ->where('stored_filename', 'like', "%{$imageSource}%")
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if ($upload) {
-            Log::debug('Upload found by stored filename', [
-                'upload_id' => $upload->id,
-                'stored_filename' => $upload->stored_filename,
-            ]);
-            return $upload;
-        }
-
-        return null;
-    }
-
-    /**
-     * Create image record from existing upload
-     */
-    protected function createImageFromUpload(Upload $upload): Image
-    {
-        Log::info('Creating image record from upload', [
-            'upload_id' => $upload->id,
-        ]);
-
-        // Try to get image dimensions if it's an image file
-        $dimensions = null;
-        try {
-            $filePath = Storage::path($upload->stored_filename);
-            if (file_exists($filePath)) {
-                $imageInfo = getimagesize($filePath);
-                if ($imageInfo !== false) {
-                    $dimensions = [
-                        'width' => $imageInfo[0],
-                        'height' => $imageInfo[1],
-                    ];
-                }
-            }
-        } catch (\Exception $e) {
-            Log::warning('Could not get image dimensions', [
-                'upload_id' => $upload->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        $image = Image::create([
-            'upload_id' => $upload->id,
-            'variant' => Image::VARIANT_ORIGINAL,
-            'path' => $upload->stored_filename,
-            'width' => $dimensions['width'] ?? null,
-            'height' => $dimensions['height'] ?? null,
-            'size_bytes' => $upload->total_size,
-            'mime_type' => $upload->mime_type,
-        ]);
-
-        Log::info('Image record created from upload', [
-            'image_id' => $image->id,
-            'upload_id' => $upload->id,
-        ]);
-
-        return $image;
-    }
 }

@@ -31,7 +31,7 @@ return new class extends Migration
             $table->json('configuration')->nullable(); // Import settings/options
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
-            $table->unsignedInteger('processing_time_seconds')->nullable();
+            $table->unsignedInteger('processing_time_seconds')->nullable()->default(0);
 
             // User tracking
             $table->unsignedBigInteger('user_id')->nullable();

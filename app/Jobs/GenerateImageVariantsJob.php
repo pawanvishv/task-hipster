@@ -92,7 +92,7 @@ class GenerateImageVariantsJob implements ShouldQueue
             }
 
             // Generate variants
-            $images = $imageProcessingService->generateVariants($upload, $this->variants);
+            $images = $imageProcessingService->generateVariants($upload);
 
             if ($images->isEmpty()) {
                 Log::warning('No images generated', [

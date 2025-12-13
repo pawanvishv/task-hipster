@@ -46,9 +46,6 @@ class LogProductImport implements ShouldQueue
             'data' => $event->getEventData(),
             'timestamp' => now()->toIso8601String(),
         ]);
-
-        // Additional logging or processing can be added here
-        // For example: send to external logging service, analytics, etc.
     }
 
     /**

@@ -49,86 +49,76 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         $this->imageManager = new ImageManager(new Driver());
     }
 
-    /**
-     * Generate image variants for an upload.
-     *
-     * @param \App\Models\Upload $upload
-     * @param array $variants
-     * @return \Illuminate\Support\Collection Collection of Image models
-     */
     public function generateVariants(Upload $upload, array $variants = []): Collection
     {
-        if (empty($variants)) {
-            $variants = [
-                Image::VARIANT_THUMBNAIL_256,
-                Image::VARIANT_MEDIUM_512,
-                Image::VARIANT_LARGE_1024,
-            ];
+        $variants = $variants ?: [
+            Image::VARIANT_SMALL  => 150,
+            Image::VARIANT_MEDIUM => 300,
+            Image::VARIANT_LARGE  => 600,
+        ];
+
+        $images = collect();
+
+        $sourcePath = Storage::disk('local')->path('uploads/' . $upload->stored_filename);
+
+        if (! $this->isValidImage($sourcePath)) {
+            Log::error('Invalid image file', [
+                'upload_id' => $upload->id,
+                'path'      => $sourcePath,
+            ]);
+
+            return $images;
         }
 
-        $generatedImages = collect();
-
-        try {
-            // Get source file path
-            $sourcePath = Storage::disk('local')->path($upload->stored_filename);
-
-            if (!$this->isValidImage($sourcePath)) {
-                Log::error('Invalid image file', [
-                    'upload_id' => $upload->id,
-                    'path' => $sourcePath,
+        foreach ($variants as $variant => $maxSize) {
+            try {
+                Log::info('Generating image variant', [
+                    'upload_id'    => $upload->id,
+                    'variant'      => $variant,
+                    'max_dimension' => $maxSize,
                 ]);
-                return $generatedImages;
-            }
 
-            foreach ($variants as $variant) {
-                try {
-                    Log::info("Calling generateVariant", [
-                        'maxDimension' => $variant,
-                    ]);
-                    $variantInfo = $this->generateVariant($sourcePath, $variant, (int) $variant);
+                $info = $this->generateVariant(
+                    sourcePath: $sourcePath,
+                    variant: $variant,
+                    maxDimension: (int) $maxSize
+                );
 
-                    $imageDTO = ImageVariantDTO::fromImageInfo(
+                $image = Image::create(
+                    ImageVariantDTO::fromImageInfo(
                         uploadId: $upload->id,
                         variant: $variant,
-                        path: $variantInfo['path'],
+                        path: $info['path'],
                         imageInfo: [
-                            'width' => $variantInfo['width'],
-                            'height' => $variantInfo['height'],
-                            'size' => $variantInfo['size'],
-                            'mime' => $variantInfo['mime'],
+                            'width'  => $info['width'],
+                            'height' => $info['height'],
+                            'size'   => $info['size'],
+                            'mime'   => $info['mime'],
                         ],
                         disk: self::STORAGE_DISK
-                    );
+                    )->toModelArray()
+                );
 
-                    $image = Image::create($imageDTO->toModelArray());
-                    $generatedImages->push($image);
+                $images->push($image);
 
-                    Log::info('Image variant generated', [
-                        'upload_id' => $upload->id,
-                        'variant' => $variant,
-                        'image_id' => $image->id,
-                        'dimensions' => "{$variantInfo['width']}x{$variantInfo['height']}",
-                    ]);
-
-                } catch (\Exception $e) {
-                    Log::error('Failed to generate variant', [
-                        'upload_id' => $upload->id,
-                        'variant' => $variant,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                Log::info('Variant generated successfully', [
+                    'upload_id' => $upload->id,
+                    'variant'   => $variant,
+                    'image_id'  => $image->id,
+                    'dimension' => "{$info['width']}x{$info['height']}",
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Variant generation failed', [
+                    'upload_id' => $upload->id,
+                    'variant'   => $variant,
+                    'error'     => $e->getMessage(),
+                ]);
             }
-
-        } catch (\Exception $e) {
-            Log::error('Failed to generate variants', [
-                'upload_id' => $upload->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
         }
 
-        return $generatedImages;
+        return $images;
     }
+
 
     /**
      * Generate a single image variant.
@@ -342,7 +332,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             Log::error('Failed to delete variants', [
                 'upload_id' => $upload->id,
@@ -406,7 +395,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
             ]);
 
             return $image;
-
         } catch (\Exception $e) {
             Log::error('Failed to store original image', [
                 'upload_id' => $upload->id,

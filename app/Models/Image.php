@@ -15,15 +15,17 @@ class Image extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     const VARIANT_ORIGINAL = 'original';
-    const VARIANT_THUMBNAIL_256 = 256;
-    const VARIANT_MEDIUM_512 = 512;
-    const VARIANT_LARGE_1024 = 1024;
+    const VARIANT_THUMBNAIL = 'thumbnail';
+    const VARIANT_SMALL = 'small';
+    const VARIANT_MEDIUM = 'medium';
+    const VARIANT_LARGE = 'large';
 
     const VARIANTS = [
         self::VARIANT_ORIGINAL,
-        self::VARIANT_THUMBNAIL_256,
-        self::VARIANT_MEDIUM_512,
-        self::VARIANT_LARGE_1024,
+        self::VARIANT_THUMBNAIL,
+        self::VARIANT_SMALL,
+        self::VARIANT_MEDIUM,
+        self::VARIANT_LARGE,
     ];
 
     protected $fillable = [

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->unsignedInteger('stock_quantity')->default(0);
             $table->uuid('primary_image_id')->nullable();
-            $table->enum('status', ['active', 'inactive', 'discontinued'])->default('active');
+            $table->enum('status', ['active', 'inactive', 'discontinued', 'draft'])->default('active');
             $table->json('metadata')->nullable(); // Additional flexible data
             $table->timestamps();
             $table->softDeletes();

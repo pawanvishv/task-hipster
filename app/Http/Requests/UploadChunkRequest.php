@@ -6,21 +6,12 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UploadChunkRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+
     public function authorize(): bool
     {
-        // Add authorization logic if needed
-        // For now, allow all authenticated users
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -35,11 +26,6 @@ class UploadChunkRequest extends FormRequest
         ];
     }
 
-    /**
-     * Get custom error messages for validator.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [

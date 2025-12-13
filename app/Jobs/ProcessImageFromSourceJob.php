@@ -58,19 +58,11 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 'type' => $sourceType,
             ]);
 
-            // ========================================
-            // STEP 1: Fetch File Content
-            // ========================================
-
             $fileData = $this->fetchFileFromSource($sourceType);
 
             if (!$fileData) {
                 throw new \Exception("Failed to fetch file from source: {$this->imageSource}");
             }
-
-            // ========================================
-            // STEP 2: Calculate Checksum (SHA256)
-            // ========================================
 
             $checksum = hash('sha256', $fileData['content']);
 
@@ -79,10 +71,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 'checksum' => $checksum,
                 'size' => $fileData['size'],
             ]);
-
-            // ========================================
-            // STEP 3: Check if Upload Exists by Checksum (IDEMPOTENT)
-            // ========================================
 
             $existingUpload = Upload::where('checksum_sha256', $checksum)
                 ->where('status', Upload::STATUS_COMPLETED)
@@ -104,10 +92,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 return;
             }
 
-            // ========================================
-            // STEP 4: Create New Upload Record
-            // ========================================
-
             Log::info('Creating new upload (checksum not found)', [
                 'checksum' => $checksum,
                 'filename' => $fileData['filename'],
@@ -128,10 +112,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 ],
             ]);
 
-            // ========================================
-            // STEP 5: Store File (Chunked for Large Files)
-            // ========================================
-
             if ($fileData['size'] > 10 * 1024 * 1024) { // > 10MB
                 Log::info('Using chunked storage for large file', [
                     'size' => $fileData['size'],
@@ -140,10 +120,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
             } else {
                 $this->storeFileDirect($upload, $fileData['content']);
             }
-
-            // ========================================
-            // STEP 6: Mark Upload as Completed
-            // ========================================
 
             $upload->update([
                 'status' => Upload::STATUS_COMPLETED,
@@ -156,14 +132,10 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 'source' => $this->imageSource,
             ]);
 
-            // ========================================
-            // STEP 7: Generate Image Variants
-            // ========================================
-
             if ($this->options['generate_variants']) {
                 GenerateImageVariantsJob::dispatch(
                     $upload->id,
-                    [Image::VARIANT_THUMBNAIL_256, Image::VARIANT_MEDIUM_512,  Image::VARIANT_LARGE_1024],
+                    [],
                     []
                 );
 
@@ -172,17 +144,9 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 ]);
             }
 
-            // ========================================
-            // STEP 8: Attach to Product
-            // ========================================
-
             if ($this->productId) {
                 $this->attachImageToProduct($upload);
             }
-
-            // ========================================
-            // STEP 9: Cleanup Source if Requested
-            // ========================================
 
             if ($this->options['delete_source'] && $sourceType === 'local') {
                 if (file_exists($this->imageSource)) {
@@ -464,10 +428,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
     protected function attachImageToProduct(Upload $upload): void
     {
         try {
-            // ========================================
-            // STEP 1: Find Product
-            // ========================================
-
             $product = Product::find($this->productId);
 
             if (!$product) {
@@ -477,17 +437,9 @@ class ProcessImageFromSourceJob implements ShouldQueue
                 return;
             }
 
-            // ========================================
-            // STEP 2: Check if Image Already Exists in Images Table
-            // ========================================
-
             $image = Image::where('upload_id', $upload->id)
                 ->where('variant', Image::VARIANT_ORIGINAL)
                 ->first();
-
-            // ========================================
-            // STEP 3: Create Image Record if Not Exists
-            // ========================================
 
             if (!$image) {
                 Log::info('Creating image record from upload', [
@@ -529,11 +481,6 @@ class ProcessImageFromSourceJob implements ShouldQueue
                     'upload_id' => $upload->id,
                 ]);
             }
-
-            // ========================================
-            // STEP 4: Attach Image to Product (IDEMPOTENT)
-            // ========================================
-
             // Check if already attached to avoid duplicate update
             if ($product->primary_image_id === $image->id) {
                 Log::info('Image already attached to product (idempotent)', [
