@@ -3,6 +3,7 @@
 namespace Pawan\UserDiscounts\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Pawan\UserDiscounts\Models\Discount;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
