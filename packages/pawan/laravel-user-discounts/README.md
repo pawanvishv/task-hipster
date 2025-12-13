@@ -4,16 +4,16 @@ A production-grade Laravel package for managing user-level discounts with determ
 
 ## Features
 
-- ✅ **Flexible Discount Types**: Percentage and fixed amount discounts
-- ✅ **Deterministic Stacking**: Multiple stacking strategies (additive, multiplicative, best_single)
-- ✅ **Usage Tracking**: Per-user and total usage caps with atomic increments
-- ✅ **Audit Trail**: Comprehensive logging of all discount operations
-- ✅ **Concurrency Safe**: Pessimistic locking and distributed locks with retry logic
-- ✅ **Idempotent Operations**: Transaction-based with deadlock retry
-- ✅ **Configurable Rounding**: Multiple rounding modes for precise calculations
-- ✅ **Event System**: Events for assigned, revoked, and applied discounts
-- ✅ **Cache Support**: Performance optimization for eligibility checks
-- ✅ **Extensive Testing**: Full unit and feature test coverage
+- **Flexible Discount Types**: Percentage and fixed amount discounts
+- **Deterministic Stacking**: Multiple stacking strategies (additive, multiplicative, best_single)
+- **Usage Tracking**: Per-user and total usage caps with atomic increments
+- **Audit Trail**: Comprehensive logging of all discount operations
+- **Concurrency Safe**: Pessimistic locking and distributed locks with retry logic
+- **Idempotent Operations**: Transaction-based with deadlock retry
+- **Configurable Rounding**: Multiple rounding modes for precise calculations
+- **Event System**: Events for assigned, revoked, and applied discounts
+- **Cache Support**: Performance optimization for eligibility checks
+- **Extensive Testing**: Full unit and feature test coverage
 
 ## Installation
 
