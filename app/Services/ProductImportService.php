@@ -9,6 +9,7 @@ use League\Csv\Reader;
 use App\Models\Product;
 use App\Models\ImportLog;
 use League\Csv\Statement;
+use App\Jobs\HandleProductImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -141,7 +142,8 @@ class ProductImportService implements ImportServiceInterface
             if ($existingProduct) {
                 $this->updateProduct($existingProduct, $row);
                 if (!empty($row['primary_image'])) {
-                    $this->attachPrimaryImage($existingProduct, $row['primary_image']);
+                    // $this->attachPrimaryImage($existingProduct, $row['primary_image']);
+                    HandleProductImage::dispatch($existingProduct->id, $row);
                 }
 
                 return [
@@ -156,7 +158,8 @@ class ProductImportService implements ImportServiceInterface
 
                 // Handle image if provided
                 if (!empty($row['primary_image'])) {
-                    $this->attachPrimaryImage($product, $row['primary_image']);
+                    // $this->attachPrimaryImage($product, $row['primary_image']);
+                    HandleProductImage::dispatch($product->id, $row);
                 }
 
                 return [
