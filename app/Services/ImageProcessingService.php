@@ -15,9 +15,6 @@ use App\Contracts\ImageProcessingServiceInterface;
 
 class ImageProcessingService implements ImageProcessingServiceInterface
 {
-    /**
-     * Supported image mime types.
-     */
     private const SUPPORTED_MIME_TYPES = [
         'image/jpeg',
         'image/jpg',
@@ -26,24 +23,10 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         'image/webp',
     ];
 
-    /**
-     * Image quality for optimization.
-     */
     private const DEFAULT_QUALITY = 85;
-
-    /**
-     * Storage disk for images.
-     */
     private const STORAGE_DISK = 'public';
-
-    /**
-     * Image manager instance.
-     */
     private ImageManager $imageManager;
 
-    /**
-     * Create a new ImageProcessingService instance.
-     */
     public function __construct()
     {
         $this->imageManager = new ImageManager(new Driver());
@@ -119,15 +102,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         return $images;
     }
 
-
-    /**
-     * Generate a single image variant.
-     *
-     * @param string $sourcePath
-     * @param string $variant
-     * @param int $maxDimension
-     * @return array ['path' => string, 'width' => int, 'height' => int, 'size' => int, 'mime' => string]
-     */
     public function generateVariant(string $sourcePath, string $variant, int $maxDimension): array
     {
         // Load image
@@ -175,12 +149,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         ];
     }
 
-    /**
-     * Validate if file is a valid image.
-     *
-     * @param string $path
-     * @return bool
-     */
     public function isValidImage(string $path): bool
     {
         if (!file_exists($path)) {
@@ -201,12 +169,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         }
     }
 
-    /**
-     * Get image dimensions.
-     *
-     * @param string $path
-     * @return array ['width' => int, 'height' => int]
-     */
     public function getImageDimensions(string $path): array
     {
         try {
@@ -226,14 +188,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         }
     }
 
-    /**
-     * Calculate dimensions maintaining aspect ratio.
-     *
-     * @param int $originalWidth
-     * @param int $originalHeight
-     * @param int $maxDimension
-     * @return array ['width' => int, 'height' => int]
-     */
     public function calculateResizeDimensions(
         int $originalWidth,
         int $originalHeight,
@@ -266,23 +220,11 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         ];
     }
 
-    /**
-     * Get supported image mime types.
-     *
-     * @return array
-     */
     public function getSupportedMimeTypes(): array
     {
         return self::SUPPORTED_MIME_TYPES;
     }
 
-    /**
-     * Optimize image quality and file size.
-     *
-     * @param string $path
-     * @param int $quality
-     * @return bool
-     */
     public function optimizeImage(string $path, int $quality = 85): bool
     {
         try {
@@ -305,12 +247,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         }
     }
 
-    /**
-     * Delete image variants for an upload.
-     *
-     * @param \App\Models\Upload $upload
-     * @return bool
-     */
     public function deleteVariants(Upload $upload): bool
     {
         try {
@@ -342,13 +278,6 @@ class ImageProcessingService implements ImageProcessingServiceInterface
         }
     }
 
-    /**
-     * Store original image without modification.
-     *
-     * @param \App\Models\Upload $upload
-     * @param string $sourcePath
-     * @return \App\Models\Image|null
-     */
     private function storeOriginalImage(Upload $upload, string $sourcePath): ?Image
     {
         try {

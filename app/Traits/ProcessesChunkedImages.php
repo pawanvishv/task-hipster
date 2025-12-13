@@ -64,7 +64,6 @@ trait ProcessesChunkedImages
 
             // Return original image
             return $images['original'] ?? null;
-
         } catch (\Exception $e) {
             Log::error('Failed to process chunked image', [
                 'path' => $imagePath,
@@ -263,7 +262,6 @@ trait ProcessesChunkedImages
                     'variant' => $variant,
                     'path' => $variantPath,
                 ]);
-
             } catch (\Exception $e) {
                 Log::error('Failed to create variant', [
                     'variant' => $variant,

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Upload;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\SoftDeletes;

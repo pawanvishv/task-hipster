@@ -12,34 +12,14 @@ class NotifyImportCompletion implements ShouldQueue
 {
     use InteractsWithQueue;
 
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
     public $tries = 3;
 
-    /**
-     * The number of seconds to wait before retrying the job.
-     *
-     * @var int
-     */
     public $backoff = 10;
-
-    /**
-     * Create the event listener.
-     */
     public function __construct()
     {
         //
     }
 
-    /**
-     * Handle the event.
-     *
-     * @param \App\Events\ImportCompleted $event
-     * @return void
-     */
     public function handle(ImportCompleted $event): void
     {
         $importLog = $event->importLog;
@@ -60,12 +40,6 @@ class NotifyImportCompletion implements ShouldQueue
         }
     }
 
-    /**
-     * Notify successful import.
-     *
-     * @param \App\Events\ImportCompleted $event
-     * @return void
-     */
     private function notifySuccess(ImportCompleted $event): void
     {
         $importLog = $event->importLog;
@@ -79,12 +53,6 @@ class NotifyImportCompletion implements ShouldQueue
         ]);
     }
 
-    /**
-     * Notify partial import success.
-     *
-     * @param \App\Events\ImportCompleted $event
-     * @return void
-     */
     private function notifyPartialSuccess(ImportCompleted $event): void
     {
         $importLog = $event->importLog;
@@ -100,16 +68,9 @@ class NotifyImportCompletion implements ShouldQueue
         ]);
     }
 
-    /**
-     * Notify import failure.
-     *
-     * @param \App\Events\ImportCompleted $event
-     * @return void
-     */
     private function notifyFailure(ImportCompleted $event): void
     {
         $importLog = $event->importLog;
-
         Log::error('Import failed', [
             'import_log_id' => $importLog->id,
             'total_rows' => $importLog->total_rows,
@@ -118,13 +79,6 @@ class NotifyImportCompletion implements ShouldQueue
         ]);
     }
 
-    /**
-     * Handle a job failure.
-     *
-     * @param \App\Events\ImportCompleted $event
-     * @param \Throwable $exception
-     * @return void
-     */
     public function failed(ImportCompleted $event, \Throwable $exception): void
     {
         Log::error('Failed to send import completion notification', [

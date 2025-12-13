@@ -83,12 +83,7 @@ class ProcessProductImportJob implements ShouldQueue
         }
     }
 
-    /**
-     * Handle a job failure.
-     *
-     * @param \Throwable $exception
-     * @return void
-     */
+    // method
     public function failed(\Throwable $exception): void
     {
         Log::error('Product import job failed after all retries', [
@@ -103,11 +98,7 @@ class ProcessProductImportJob implements ShouldQueue
         // Example: Mail::to($this->userId)->send(new ImportFailedMail($exception));
     }
 
-    /**
-     * Create a temporary file for import processing.
-     *
-     * @return \Illuminate\Http\UploadedFile
-     */
+    // method
     private function createTemporaryFile(): \Illuminate\Http\UploadedFile
     {
         $content = Storage::get($this->filePath);
@@ -124,12 +115,7 @@ class ProcessProductImportJob implements ShouldQueue
         );
     }
 
-    /**
-     * Cleanup temporary file.
-     *
-     * @param string $path
-     * @return void
-     */
+    // method
     private function cleanupTemporaryFile(string $path): void
     {
         if (file_exists($path)) {
@@ -137,11 +123,7 @@ class ProcessProductImportJob implements ShouldQueue
         }
     }
 
-    /**
-     * Get tags for queue monitoring.
-     *
-     * @return array
-     */
+    // method
     public function tags(): array
     {
         return [

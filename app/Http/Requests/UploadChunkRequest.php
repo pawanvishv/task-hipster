@@ -48,11 +48,7 @@ class UploadChunkRequest extends FormRequest
         ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array<string, string>
-     */
+    // method
     public function attributes(): array
     {
         return [
@@ -67,12 +63,7 @@ class UploadChunkRequest extends FormRequest
         ];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param \Illuminate\Validation\Validator $validator
-     * @return void
-     */
+    // method
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -109,14 +100,7 @@ class UploadChunkRequest extends FormRequest
         });
     }
 
-    /**
-     * Handle a failed validation attempt.
-     *
-     * @param \Illuminate\Contracts\Validation\Validator $validator
-     * @return void
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
+    // method
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {
         if ($this->expectsJson()) {

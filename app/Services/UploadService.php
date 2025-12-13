@@ -12,31 +12,10 @@ use App\DataTransferObjects\UploadChunkDTO;
 
 class UploadService implements UploadServiceInterface
 {
-    /**
-     * Temporary chunk storage path.
-     */
     private const CHUNK_STORAGE_PATH = 'chunks';
-
-    /**
-     * Final upload storage path.
-     */
     private const UPLOAD_STORAGE_PATH = 'uploads';
-
-    /**
-     * Storage disk to use.
-     */
     private const STORAGE_DISK = 'local';
 
-    /**
-     * Initialize a new chunked upload.
-     *
-     * @param string $originalFilename
-     * @param int $totalChunks
-     * @param int $totalSize
-     * @param string $checksumSha256
-     * @param string|null $mimeType
-     * @return \App\Models\Upload
-     */
     public function initializeUpload(
         string $originalFilename,
         int $totalChunks,
@@ -95,12 +74,6 @@ class UploadService implements UploadServiceInterface
         });
     }
 
-    /**
-     * Process and store a chunk.
-     *
-     * @param \App\DataTransferObjects\UploadChunkDTO $chunkDTO
-     * @return array ['success' => bool, 'message' => string, 'upload' => Upload]
-     */
     public function processChunk(UploadChunkDTO $chunkDTO): array
     {
         return DB::transaction(function () use ($chunkDTO) {
@@ -203,12 +176,6 @@ class UploadService implements UploadServiceInterface
         });
     }
 
-    /**
-     * Complete the upload and assemble chunks.
-     *
-     * @param string $uploadId
-     * @return array ['success' => bool, 'message' => string, 'upload' => Upload]
-     */
     public function completeUpload(string $uploadId): array
     {
         return DB::transaction(function () use ($uploadId) {
@@ -286,7 +253,6 @@ class UploadService implements UploadServiceInterface
                     'message' => 'Upload completed successfully',
                     'upload' => $upload->fresh(),
                 ];
-
             } catch (\Exception $e) {
                 $upload->markAsFailed($e->getMessage());
                 $upload->save();
@@ -306,12 +272,6 @@ class UploadService implements UploadServiceInterface
         });
     }
 
-    /**
-     * Get upload status and progress.
-     *
-     * @param string $uploadId
-     * @return array
-     */
     public function getUploadStatus(string $uploadId): array
     {
         $upload = Upload::find($uploadId);
@@ -335,12 +295,6 @@ class UploadService implements UploadServiceInterface
         ];
     }
 
-    /**
-     * Cancel and cleanup an upload.
-     *
-     * @param string $uploadId
-     * @return bool
-     */
     public function cancelUpload(string $uploadId): bool
     {
         return DB::transaction(function () use ($uploadId) {
@@ -372,12 +326,6 @@ class UploadService implements UploadServiceInterface
         });
     }
 
-    /**
-     * Verify upload checksum.
-     *
-     * @param string $uploadId
-     * @return bool
-     */
     public function verifyChecksum(string $uploadId): bool
     {
         $upload = Upload::find($uploadId);
@@ -400,12 +348,6 @@ class UploadService implements UploadServiceInterface
         return hash_equals($upload->checksum_sha256, $actualChecksum);
     }
 
-    /**
-     * Resume an interrupted upload.
-     *
-     * @param string $uploadId
-     * @return array ['can_resume' => bool, 'uploaded_chunks' => array, 'missing_chunks' => array]
-     */
     public function resumeUpload(string $uploadId): array
     {
         $upload = Upload::find($uploadId);
@@ -451,13 +393,6 @@ class UploadService implements UploadServiceInterface
         ];
     }
 
-    /**
-     * Assemble chunks into final file.
-     *
-     * @param \App\Models\Upload $upload
-     * @return string Final file path
-     * @throws \Exception
-     */
     private function assembleChunks(Upload $upload): string
     {
         $finalPath = $this->getUploadPath($upload);
@@ -493,7 +428,6 @@ class UploadService implements UploadServiceInterface
             unlink($tempPath);
 
             return $finalPath;
-
         } catch (\Exception $e) {
             if (is_resource($tempHandle)) {
                 fclose($tempHandle);
@@ -505,12 +439,6 @@ class UploadService implements UploadServiceInterface
         }
     }
 
-    /**
-     * Cleanup chunk files.
-     *
-     * @param \App\Models\Upload $upload
-     * @return void
-     */
     private function cleanupChunks(Upload $upload): void
     {
         $disk = Storage::disk(self::STORAGE_DISK);
@@ -530,24 +458,11 @@ class UploadService implements UploadServiceInterface
         }
     }
 
-    /**
-     * Get chunk storage path.
-     *
-     * @param string $uploadId
-     * @param int $chunkIndex
-     * @return string
-     */
     private function getChunkPath(string $uploadId, int $chunkIndex): string
     {
         return self::CHUNK_STORAGE_PATH . "/{$uploadId}/chunk_{$chunkIndex}";
     }
 
-    /**
-     * Get final upload path.
-     *
-     * @param \App\Models\Upload $upload
-     * @return string
-     */
     private function getUploadPath(Upload $upload): string
     {
         return self::UPLOAD_STORAGE_PATH . '/' . $upload->stored_filename;

@@ -166,9 +166,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         }
     }
 
-    /**
-     * Detect source type from URL/path format
-     */
+    // method
     protected function detectSourceType(string $source): string
     {
         // Check if it's a URL (http/https)
@@ -189,9 +187,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         throw new \Exception("Unable to detect source type: {$source}");
     }
 
-    /**
-     * Fetch file from source based on type
-     */
+    // method
     protected function fetchFileFromSource(string $sourceType): ?array
     {
         return match($sourceType) {
@@ -202,9 +198,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         };
     }
 
-    /**
-     * Fetch file from URL
-     */
+    // method
     protected function fetchFromUrl(): array
     {
         Log::info('Fetching from URL', ['url' => $this->imageSource]);
@@ -249,9 +243,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         ];
     }
 
-    /**
-     * Fetch file from S3
-     */
+    // method
     protected function fetchFromS3(): array
     {
         // Parse S3 URL: s3://bucket/path/to/file.jpg
@@ -293,9 +285,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         ];
     }
 
-    /**
-     * Fetch file from local filesystem
-     */
+    // method
     protected function fetchFromLocal(): array
     {
         if (!file_exists($this->imageSource)) {
@@ -324,9 +314,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         ];
     }
 
-    /**
-     * Store file directly (for smaller files)
-     */
+    // method
     protected function storeFileDirect(Upload $upload, string $content): void
     {
         $storedPath = "uploads/{$upload->id}/{$upload->original_filename}";
@@ -344,9 +332,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Store file in chunks (for larger files)
-     */
+    // method
     protected function storeFileInChunks(Upload $upload, string $content): void
     {
         $chunkSize = $this->options['chunk_size'];
@@ -421,10 +407,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Attach image to product
-     * First checks images table, then creates if needed
-     */
+    // method
     protected function attachImageToProduct(Upload $upload): void
     {
         try {
@@ -510,9 +493,7 @@ class ProcessImageFromSourceJob implements ShouldQueue
         }
     }
 
-    /**
-     * Handle a job failure.
-     */
+    // method
     public function failed(\Throwable $exception): void
     {
         Log::error('ProcessImageFromSourceJob failed permanently', [

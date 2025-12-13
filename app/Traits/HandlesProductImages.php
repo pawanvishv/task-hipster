@@ -56,7 +56,6 @@ trait HandlesProductImages
 
             // STEP 5: Not found
             $this->logImageNotFound($product, $imageSource);
-
         } catch (\Throwable $e) {
             $this->logImageAttachmentFailure($product, $imageSource, $e);
         }
@@ -152,9 +151,9 @@ trait HandlesProductImages
 
         // Strategy 3: Via upload relation
         $image = Image::whereHas('upload', function ($query) use ($filename) {
-                $query->where('original_filename', $filename)
-                      ->orWhere('stored_filename', 'like', "%{$filename}%");
-            })
+            $query->where('original_filename', $filename)
+                ->orWhere('stored_filename', 'like', "%{$filename}%");
+        })
             ->where('variant', Image::VARIANT_ORIGINAL)
             ->latest()
             ->first();

@@ -33,9 +33,7 @@ class ProductImportService implements ImportServiceInterface
         $this->productRepository = $productRepository;
     }
 
-    /**
-     * Import products from CSV file
-     */
+    // method
     public function import(UploadedFile $file, array $options = []): ImportResultDTO
     {
         $importLog = $this->createImportLog($file);
@@ -74,9 +72,7 @@ class ProductImportService implements ImportServiceInterface
         }
     }
 
-    /**
-     * Validate CSV file
-     */
+    // method
     public function validateFile(UploadedFile $file): array
     {
         try {
@@ -110,18 +106,13 @@ class ProductImportService implements ImportServiceInterface
         }
     }
 
-    /**
-     * Get required columns
-     */
+    // method
     public function getRequiredColumns(): array
     {
         return $this->requiredColumns;
     }
 
-    /**
-     * Process a single row from CSV
-     * Required by ImportServiceInterface
-     */
+    // method
     public function processRow(array $row, int $rowNumber): array
     {
         try {
@@ -184,17 +175,13 @@ class ProductImportService implements ImportServiceInterface
         }
     }
 
-    /**
-     * Get import type
-     */
+    // method
     public function getImportType(): string
     {
         return 'products';
     }
 
-    /**
-     * Create import log record
-     */
+    // method
     protected function createImportLog(UploadedFile $file): ImportLog
     {
         return ImportLog::create([
@@ -210,9 +197,7 @@ class ProductImportService implements ImportServiceInterface
         ]);
     }
 
-    /**
-     * Read CSV file
-     */
+    // method
     protected function readCsv(UploadedFile $file): Reader
     {
         $csv = Reader::from($file->getRealPath(), 'r');
@@ -221,18 +206,14 @@ class ProductImportService implements ImportServiceInterface
         return $csv;
     }
 
-    /**
-     * Get records from CSV
-     */
+    // method
     protected function getRecords(Reader $csv): iterable
     {
         $statement = new Statement();
         return $statement->process($csv);
     }
 
-    /**
-     * Process CSV records
-     */
+    // method
     protected function processRecords(iterable $records, array $options, ImportLog $importLog): array
     {
         $total = 0;
@@ -303,9 +284,7 @@ class ProductImportService implements ImportServiceInterface
         ];
     }
 
-    /**
-     * Validate CSV record
-     */
+    // method
     protected function validateRecord(array $record): array
     {
         $errors = [];
